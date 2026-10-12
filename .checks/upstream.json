@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "month": "2026-10",
+  "checked_at": "2026-10-12T06:10:05.880631+00:00",
+  "catalog_url": "https://atrustcdn.sangfor.com/tools/clientVersion/data.js",
+  "catalog_sha256": "26489226109fe053efb9cbd099b32bb7f70f7d170dcc0dbc27e6cb967fed29e4",
+  "latest_observed_version": "2.5.16.50",
+  "meaning": "Official catalog observed; this receipt does not certify package or VPN functionality."
+}
