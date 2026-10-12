@@ -42,7 +42,8 @@ def main():
     if pending.returncode:
         run(['git','-c',f'user.name={identity["login"]}','-c',f'user.email={identity["id"]}+{identity["login"]}@users.noreply.github.com',
              'commit','-m','Build and publish signed Fedora aTrust RPM updates'],cwd=ROOT)
-    run(['git','push','-u','origin','main'],cwd=ROOT)
+    run(['git','-c','credential.helper=','-c','credential.helper=!gh auth git-credential',
+         'push','-u','origin','main'],cwd=ROOT)
     pages=subprocess.run(['gh','api',f'repos/{REPO}/pages'],capture_output=True,text=True)
     if pages.returncode:
         run(['gh','api',f'repos/{REPO}/pages','-X','POST','-f','build_type=workflow'])
