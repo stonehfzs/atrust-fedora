@@ -49,6 +49,10 @@ jobs:
       - name: Read official version catalog
         id: upstream
         run: python3 scripts/build.py check
+      - name: Record a monthly upstream check receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/record_check.py
       - name: Check for an existing immutable release
         id: needed
         env:
@@ -96,8 +100,11 @@ jobs:
           echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
           echo "RPM_SIGNING_KEY_ID=$SIGNING_FINGERPRINT" >> "$GITHUB_ENV"
       - name: Sign and verify RPM
-        if: steps.needed.outputs.publish == 'true'
+        if: steps.needed.outputs.build == 'true'
         run: python3 scripts/publish.py sign
+      - name: Verify the release signature
+        if: steps.needed.outputs.publish == 'true'
+        run: python3 scripts/publish.py verify
       - name: Publish immutable release
         if: steps.needed.outputs.build == 'true'
         env:

@@ -28,6 +28,17 @@ def verify_manifest(dist):
     return m
 
 
+def verify_signature(dist,key_id):
+    m=verify_manifest(dist)
+    if m.get('signing_key')!=key_id:raise ValueError('Unexpected release signing key')
+    if not re.fullmatch(r'[A-Fa-f0-9]{40}',key_id):raise ValueError('Use a complete signing fingerprint')
+    with tempfile.TemporaryDirectory() as db:
+        public=Path(db)/(key_id.lower()+'.key')
+        with public.open('wb') as f:run(['gpg','--batch','--armor','--export',key_id],stdout=f)
+        run(['rpmkeys','--define','_keyring fs','--define',f'_keyringpath {db}/','--checksig',dist/m['rpm']])
+    return m
+
+
 def sign(dist,key_id):
     m=verify_manifest(dist)
     rpm=dist/m['rpm']
@@ -57,11 +68,13 @@ def assemble(dist,site,key_id,archive,offline=False):
     else:
         releases=run(['gh','api',f'repos/{repo}/releases','--paginate','--slurp'],capture_output=True,text=True)
         existing=[r for page in json.loads(releases.stdout) for r in page]
-    kept=[x for x in existing if not x['draft'] and not x['prerelease'] and re.fullmatch(r'v[0-9.]+-[0-9]+\.local\.fc44',x['tag_name'])]
+    kept=[x for x in existing if not x['draft'] and not x['prerelease'] and x['tag_name']!=m['tag'] and re.fullmatch(r'v[0-9.]+-[0-9]+\.local\.fc44',x['tag_name'])]
     kept=sorted(kept,key=lambda x:x['published_at'],reverse=True)[:2]
     for rel in kept:
         tag=rel['tag_name'];target=package_root/tag;target.mkdir(exist_ok=True)
-        run(['gh','release','download',tag,'--repo',repo,'--pattern','*.rpm','--dir',target,'--skip-existing'])
+        run(['gh','release','download',tag,'--repo',repo,'--pattern','*.rpm','--pattern','manifest.json','--dir',target,'--skip-existing'])
+        previous=verify_signature(target,key_id)
+        if previous['tag']!=tag:raise ValueError('Previous release manifest tag mismatch')
     target=package_root/m['tag'];target.mkdir(exist_ok=True)
     shutil.copy2(dist/m['rpm'],target/m['rpm'])
     metadata=site/'rpm/fedora/44/x86_64';metadata.mkdir(parents=True,exist_ok=True)
@@ -113,7 +126,7 @@ def release(dist,m):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('command',choices=['sign','release','site'])
+    p.add_argument('command',choices=['sign','verify','release','site'])
     p.add_argument('--dist',type=Path,default=ROOT/'dist')
     p.add_argument('--site',type=Path,default=ROOT/'build/site')
     p.add_argument('--archive',type=Path,default=ROOT/'build/archive')
@@ -122,8 +135,11 @@ def main():
     a=p.parse_args()
     if not a.key_id:raise ValueError('Missing signing key fingerprint')
     if a.command=='sign':sign(a.dist,a.key_id)
-    elif a.command=='release':release(a.dist,verify_manifest(a.dist))
-    else:assemble(a.dist,a.site,a.key_id,a.archive,a.offline)
+    elif a.command=='verify':verify_signature(a.dist,a.key_id)
+    elif a.command=='release':release(a.dist,verify_signature(a.dist,a.key_id))
+    else:
+        verify_signature(a.dist,a.key_id)
+        assemble(a.dist,a.site,a.key_id,a.archive,a.offline)
 
 
 if __name__=='__main__':main()

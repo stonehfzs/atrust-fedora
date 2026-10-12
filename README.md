@@ -22,6 +22,10 @@ sudo dnf upgrade --refresh cn.com.sangfor.atrust
 ## 自动更新如何运行
 
 GitHub Actions 每 6 小时检查一次深信服官方 CDN 索引，也可在 Actions 页面手动运行。
+检查时间可能因 GitHub 排队而延迟。每月向 `.checks/upstream.json` 提交一次官方索引检查记录，
+提供审计信息，并保持仓库活动，避免公开仓库因 60 天无活动而被 GitHub 自动停用定时任务。
+该 GitHub 行为见[官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。
+在 Actions 页面查看最近运行结果；失败时仍保留已发布的包。检查记录只证明读到了索引，不代表新版已经发布。
 
 1. 只接受官方 HTTPS Ubuntu amd64 下载地址，不执行下载的索引 JavaScript。
 2. 原始包记录 SHA256；已知基线的哈希必须匹配。哈希记录用于完整性和追溯，不代表厂商独立签名。
