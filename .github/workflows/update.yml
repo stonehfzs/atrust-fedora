@@ -1,0 +1,126 @@
+name: Check, build and publish signed RPM
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'packaging/**'
+      - 'tests/**'
+      - 'config.json'
+      - '.github/workflows/update.yml'
+
+concurrency:
+  group: atrust-rpm-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    container: fedora:44
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install build and validation tools
+        run: |
+          dnf install -y python3 nodejs curl git gh rpm-build rpm-sign createrepo_c dpkg gnupg2 \
+            bash coreutils systemd iptables-nft iproute procps-ng psmisc \
+            libX11 libXcomposite libXdamage libXext libXfixes libXrandr libXScrnSaver libXtst \
+            libxcb libdrm mesa-libgbm libxkbcommon alsa-lib atk at-spi2-atk gtk3 nss nspr \
+            glib2 pango cairo libcurl libproxy qt5-qtbase qt5-qtx11extras libnsl libsecret libstdc++
+          groupadd -r stonesun
+      - name: Pipeline tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Read official version catalog
+        id: upstream
+        run: python3 scripts/build.py check
+      - name: Check for an existing immutable release
+        id: needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.upstream.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' > /tmp/atrust-release-state 2>/dev/null && test "$(cat /tmp/atrust-release-state)" = false; then
+            echo 'build=false' >> "$GITHUB_OUTPUT"
+            if curl -fsS https://stonehfzs.github.io/atrust-fedora/manifest.json > /tmp/atrust-site-manifest && python3 -c 'import json,os; assert json.load(open("/tmp/atrust-site-manifest"))["tag"] == os.environ["RELEASE_TAG"]'; then
+              echo 'publish=false' >> "$GITHUB_OUTPUT"
+            else
+              echo 'publish=true' >> "$GITHUB_OUTPUT"
+              echo 'resume=true' >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo 'build=true' >> "$GITHUB_OUTPUT"
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Recover a release whose Pages deployment was interrupted
+        if: steps.needed.outputs.resume == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.upstream.outputs.tag }}
+        run: gh release download "$RELEASE_TAG" --dir dist --pattern '*.rpm' --pattern manifest.json --pattern SHA256SUMS
+      - name: Fetch, adapt and build
+        if: steps.needed.outputs.build == 'true'
+        run: python3 scripts/build.py build --offline
+      - name: Check RPM installation in the isolated runner
+        if: steps.needed.outputs.build == 'true'
+        run: dnf install -y ./dist/*.rpm
+      - name: Import repository signing key
+        if: steps.needed.outputs.publish == 'true'
+        env:
+          SIGNING_KEY: ${{ secrets.RPM_SIGNING_PRIVATE_KEY_B64 }}
+          SIGNING_FINGERPRINT: ${{ vars.RPM_SIGNING_KEY_ID }}
+        run: |
+          test -n "$SIGNING_KEY"
+          test -n "$SIGNING_FINGERPRINT"
+          export GNUPGHOME="$RUNNER_TEMP/atrust-gnupg"
+          install -d -m 0700 "$GNUPGHOME"
+          printf '%s' "$SIGNING_KEY" | base64 --decode | gpg --batch --import
+          gpg --batch --list-secret-keys "$SIGNING_FINGERPRINT" >/dev/null
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+          echo "RPM_SIGNING_KEY_ID=$SIGNING_FINGERPRINT" >> "$GITHUB_ENV"
+      - name: Sign and verify RPM
+        if: steps.needed.outputs.publish == 'true'
+        run: python3 scripts/publish.py sign
+      - name: Publish immutable release
+        if: steps.needed.outputs.build == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish.py release
+      - name: Generate and sign DNF repository metadata
+        if: steps.needed.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish.py site
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        if: steps.needed.outputs.publish == 'true'
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        if: steps.needed.outputs.publish == 'true'
+        with:
+          path: build/site
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        id: deployment
+        if: steps.needed.outputs.publish == 'true'
+      - name: Remove temporary signing material
+        if: always()
+        run: |
+          if test -d "$RUNNER_TEMP/atrust-gnupg"; then
+            GNUPGHOME="$RUNNER_TEMP/atrust-gnupg" gpgconf --kill all || true
+            rm -rf "$RUNNER_TEMP/atrust-gnupg"
+          fi

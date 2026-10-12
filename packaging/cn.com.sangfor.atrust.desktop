@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=aTrust
+Comment=Sangfor aTrust client, locally adapted for Fedora
+Exec=/usr/bin/atrust %u
+Icon=aTrust
+Terminal=false
+Type=Application
+StartupNotify=false
+Categories=Network;
+MimeType=x-scheme-handler/atrust;

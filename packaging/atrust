@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+ATRUST_APP=/usr/share/sangfor/aTrust
+# Vendor private libraries (including encrypted SQLite) come first.
+# Fedora graphics/Qt libraries take precedence over resources/lib.
+export LD_LIBRARY_PATH="$ATRUST_APP/resources/bin:$ATRUST_APP:/usr/lib64:$ATRUST_APP/resources/lib"
+export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt5/plugins
+export ATRUST_GATEWAY="${ATRUST_GATEWAY:-https://otrust.ouc.edu.cn}"
+exec "$ATRUST_APP/aTrustTray" --no-sandbox --disable-gpu "$@"

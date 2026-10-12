@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+ATRUST_APP=/usr/share/sangfor/aTrust
+export LD_LIBRARY_PATH="$ATRUST_APP/resources/bin:$ATRUST_APP:/usr/lib64:$ATRUST_APP/resources/lib"
+export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib64/qt5/plugins
+exec "$ATRUST_APP/resources/bin/aTrustAgent" --plugin plugin-daemon --plugin-cmd '|'

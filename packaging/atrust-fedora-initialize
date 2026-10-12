@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+if (( EUID != 0 )); then
+    echo 'Run this initialization through the RPM installer as root.' >&2
+    exit 1
+fi
+ATRUST_STATE=/var/lib/atrust
+install -d -m 2770 -o root -g stonesun "$ATRUST_STATE"
+for ATRUST_SUBDIR in bin tmp var var/run var/conf Crash iddbase database \
+    var/run/plugin-daemon var/run/plugins/aTrustCore var/run/plugins/aTrustTunnel; do
+    install -d -m 2770 -o root -g stonesun "$ATRUST_STATE/$ATRUST_SUBDIR"
+done
+for ATRUST_LOCK in sapp-aTrustAgent-b269-lockfile \
+    sapp-aTrustAgent_plugin-daemon-b49a-lockfile \
+    sapp-aTrustAgent_plugins_aTrustCore_h_e-5c4f-lockfile \
+    sapp-aTrustAgent_plugins_aTrustTunnel-f282-lockfile \
+    Globalatrustdb_lock_atrust.spa Globalatrustdb_lock_private.dns \
+    Globalatrustdb_lock_tunnel.access2 Globalatrustdb_lock_TunnelSharedConfig \
+    GlobalDeviceIdLock GlobalSdpUserLogin; do
+    if [[ ! -e "$ATRUST_STATE/$ATRUST_LOCK" ]]; then
+        install -m 0660 -o root -g stonesun /dev/null "$ATRUST_STATE/$ATRUST_LOCK"
+    fi
+done
+atrust_port() {
+    if [[ ! -e "$ATRUST_STATE/var/run/$1" ]]; then
+        printf '%s' "$2" > "$ATRUST_STATE/var/run/$1"
+        chown root:stonesun "$ATRUST_STATE/var/run/$1"
+        chmod 0660 "$ATRUST_STATE/var/run/$1"
+    fi
+}
+atrust_port httpserver 54630
+atrust_port eventbus 55630
+atrust_port plugin-daemon/thrift 56630
+atrust_port plugins/aTrustCore/thrift 56641
+atrust_port plugins/aTrustTunnel/thrift 56652
+if [[ ! -e "$ATRUST_STATE/localConfig.json" ]]; then
+    printf '%s\n' '{"lang":"zh-CN"}' > "$ATRUST_STATE/localConfig.json"
+    chown root:stonesun "$ATRUST_STATE/localConfig.json"
+    chmod 0660 "$ATRUST_STATE/localConfig.json"
+fi

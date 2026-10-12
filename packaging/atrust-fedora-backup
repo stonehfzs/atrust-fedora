@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+if (( EUID != 0 )); then echo 'Run backup as root.' >&2; exit 1; fi
+umask 077
+ATRUST_BACKUPS=/var/lib/atrust-fedora-backups
+install -d -m 0700 "$ATRUST_BACKUPS"
+ATRUST_SNAPSHOT=$(mktemp -d "$ATRUST_BACKUPS/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")
+ATRUST_ACTIVE=0
+ATRUST_UPGRADE=0
+if [[ "${1:-}" == --for-upgrade ]]; then ATRUST_UPGRADE=1; fi
+if systemctl is-active --quiet aTrustDaemon.service; then
+    ATRUST_ACTIVE=1
+    systemctl stop aTrustDaemon.service
+fi
+atrust_restart() {
+    if (( ATRUST_ACTIVE )); then systemctl start aTrustDaemon.service; fi
+}
+trap atrust_restart EXIT
+rpm -q cn.com.sangfor.atrust > "$ATRUST_SNAPSHOT/installed-version.txt"
+printf '%s\n' "$ATRUST_ACTIVE" > "$ATRUST_SNAPSHOT/was-active.txt"
+ATRUST_PATHS=()
+for ATRUST_ITEM in var/lib/atrust etc/atrust-fedora.conf root/.aTrust; do
+    if [[ -e "/$ATRUST_ITEM" ]]; then ATRUST_PATHS+=("$ATRUST_ITEM"); fi
+done
+if (( ${#ATRUST_PATHS[@]} )); then
+    tar --acls --xattrs -czf "$ATRUST_SNAPSHOT/state.tar.gz" -C / "${ATRUST_PATHS[@]}"
+fi
+if (( ATRUST_UPGRADE )); then
+    install -d -m 0700 /run/atrust-fedora-upgrade
+    printf '%s\n' "$ATRUST_ACTIVE" > /run/atrust-fedora-upgrade/was-active
+    printf '%s\n' "$ATRUST_SNAPSHOT" > /run/atrust-fedora-upgrade/snapshot
+    trap - EXIT
+fi
+echo "aTrust state backup saved: $ATRUST_SNAPSHOT"

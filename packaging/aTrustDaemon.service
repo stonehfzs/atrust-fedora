@@ -1,0 +1,17 @@
+[Unit]
+Description=Sangfor aTrust daemon (local Fedora adaptation)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=stonesun
+UMask=0007
+ExecStart=/usr/libexec/atrust-fedora-daemon
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

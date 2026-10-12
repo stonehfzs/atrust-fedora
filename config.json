@@ -1,0 +1,12 @@
+{
+  "repository": "stonehfzs/atrust-fedora",
+  "fedora_release": 44,
+  "architecture": "x86_64",
+  "packaging_revision": 6,
+  "runtime_group": "stonesun",
+  "default_gateway": "https://otrust.ouc.edu.cn",
+  "catalog_url": "https://atrustcdn.sangfor.com/tools/clientVersion/data.js",
+  "baseline_sha256": {
+    "2.5.16.50": "88acaa4ba53917605a10a0568f24b876ca14a27821a6293b69f4f6aa97e5efda"
+  }
+}
