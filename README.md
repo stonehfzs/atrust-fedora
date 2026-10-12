@@ -22,14 +22,25 @@ sudo dnf upgrade --refresh cn.com.sangfor.atrust
 ### GitHub 下载需要代理时
 
 普通命令可以下载、`sudo dnf` 却超时时，请检查系统权限下的代理配置。
-`sudo` 或 `pkexec` 可能不会保留当前终端的代理环境变量。可在本机
-`/etc/yum.repos.d/atrust-fedora.repo` 的 `[atrust-fedora]` 节中配置已有代理，例如：
+终端中的 `http_proxy`、`https_proxy` 属于当前进程的环境，提权工具可能会清理它们。
+DNF 在没有自己的代理配置、也没有代理环境变量时会尝试直连。
+在 Fedora 44 的 DNF5 中，建议用原生配置管理命令保存已有代理，例如：
 
-```ini
-proxy=http://127.0.0.1:7890
+```bash
+sudo dnf config-manager setopt atrust-fedora.proxy=http://127.0.0.1:7890
 ```
 
+该命令将本机设置写入 `/etc/dnf/repos.override.d/99-config_manager.repo`，
+不依赖终端变量，也不会因重新下载或替换 `atrust-fedora.repo` 而丢失。
 这只影响 aTrust 仓库；更新时该代理须处于运行状态。无需代理的网络不用添加该项。
+代理端口改变时重新运行上面的命令；移除本机覆盖配置可用：
+
+```bash
+sudo dnf config-manager unsetopt atrust-fedora.proxy
+```
+
+配置行为见 [DNF5 配置说明](https://dnf5.readthedocs.io/en/latest/dnf5.conf.5.html#proxy)
+和 [config-manager 官方文档](https://dnf5.readthedocs.io/en/latest/dnf5_plugins/config-manager.8.html)。
 
 ## 自动更新如何运行
 
