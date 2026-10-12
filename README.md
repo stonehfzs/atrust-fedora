@@ -19,6 +19,18 @@ sudo dnf upgrade --refresh cn.com.sangfor.atrust
 
 本仓库签名公钥指纹：`465DA2EFBC9EB7525965CA13AE4371CA81B1E124`。
 
+### GitHub 下载需要代理时
+
+普通命令可以下载、`sudo dnf` 却超时时，请检查系统权限下的代理配置。
+`sudo` 或 `pkexec` 可能不会保留当前终端的代理环境变量。可在本机
+`/etc/yum.repos.d/atrust-fedora.repo` 的 `[atrust-fedora]` 节中配置已有代理，例如：
+
+```ini
+proxy=http://127.0.0.1:7890
+```
+
+这只影响 aTrust 仓库；更新时该代理须处于运行状态。无需代理的网络不用添加该项。
+
 ## 自动更新如何运行
 
 GitHub Actions 每 6 小时检查一次深信服官方 CDN 索引，也可在 Actions 页面手动运行。
