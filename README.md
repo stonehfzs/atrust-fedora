@@ -12,7 +12,13 @@
 curl -fLO https://stonehfzs.github.io/atrust-fedora/atrust-fedora.repo
 sudo install -m 0644 atrust-fedora.repo /etc/yum.repos.d/atrust-fedora.repo
 sudo dnf upgrade --refresh cn.com.sangfor.atrust
+sudo systemctl enable --now aTrustDaemon.service
 ```
+
+aTrust 桌面界面需要后台服务才能连接。首次安装后执行上面的 `enable --now`，
+让后台立即运行，并在以后开机时启动。该设置只启用后台服务，不添加桌面窗口的登录自启项。
+如果连接时出现 “The client was exited last time or its process is disabled / Restart Service”，
+先检查 `systemctl status aTrustDaemon.service`；后台未运行时执行上述服务命令。
 
 仓库开启 RPM 签名和仓库元数据签名验证。首次导入密钥时，应将 DNF 显示的指纹与本仓库
 `RPM-GPG-KEY-atrust-fedora` 的指纹核对。支持的系统范围以仓库路径为准；没有 Fedora 其他版本的包时不会提供对应更新。
