@@ -101,6 +101,7 @@ def spec(version, release, payload, assets, group):
     installs = '\n'.join(f'install -Dm{mode} {q(assets/src)} %{{buildroot}}{dest}'
         for src,dest,mode in [
             ('atrust','/usr/bin/atrust','755'),
+            ('fonts.conf','/usr/share/sangfor/aTrust/fedora-fonts.conf','644'),
             ('atrust-fedora-daemon','/usr/libexec/atrust-fedora-daemon','755'),
             ('atrust-fedora-initialize','/usr/libexec/atrust-fedora-initialize','755'),
             ('atrust-fedora-backup','/usr/libexec/atrust-fedora-backup','755'),
@@ -126,7 +127,7 @@ AutoReqProv: no
 Unofficial native Fedora adaptation of the official Sangfor Linux client.
 Vendor binaries are retained. Reviewed JavaScript compatibility patches
 and native Fedora launch/service configuration are applied by this repository.
-This personal repository currently targets the {group} group on Fedora 44.
+This personal repository currently targets the {group} group on Fedora {CONFIG['fedora_release']}.
 
 %prep
 %build
@@ -257,7 +258,7 @@ def build(args):
         run(['rpmbuild','-bb','--define',f'_topdir {top}','--define','_tmppath /tmp',spec_file],stdout=log,stderr=log)
     rpms=list((top/'RPMS/x86_64').glob('*.rpm'))
     if len(rpms)!=1: raise RuntimeError('Unexpected build output')
-    run(['rpm','-K',rpms[0]])
+    run(['rpm','--nosignature','-K',rpms[0]])  # Build stage checks digests; publication requires signatures.
     dist=args.dist.resolve();dist.mkdir(parents=True,exist_ok=True)
     rpm=dist/rpms[0].name;shutil.copy2(rpms[0],rpm)
     manifest={'schema':1,'name':NAME,'version':version,'release':release,'architecture':'x86_64',

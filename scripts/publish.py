@@ -22,7 +22,7 @@ def verify_manifest(dist):
     m=json.loads((dist/'manifest.json').read_text())
     if m.get('schema')!=1 or m.get('name')!='cn.com.sangfor.atrust':raise ValueError('Unexpected manifest')
     if Path(m['rpm']).name!=m['rpm'] or not m['rpm'].endswith('.rpm'):raise ValueError('Unsafe RPM filename')
-    if not re.fullmatch(r'v[0-9.]+-[0-9]+\.local\.fc44',m['tag']):raise ValueError('Unexpected release tag')
+    if not re.fullmatch(rf"v[0-9.]+-[0-9]+\.local\.fc{CONFIG['fedora_release']}",m['tag']):raise ValueError('Unexpected release tag')
     if sha(dist/m['rpm'])!=m['rpm_sha256']:raise ValueError('RPM hash does not match build manifest')
     if m['checks'].get('missing_libraries')!=0:raise ValueError('Runtime verification failed')
     return m
@@ -68,7 +68,7 @@ def assemble(dist,site,key_id,archive,offline=False):
     else:
         releases=run(['gh','api',f'repos/{repo}/releases','--paginate','--slurp'],capture_output=True,text=True)
         existing=[r for page in json.loads(releases.stdout) for r in page]
-    kept=[x for x in existing if not x['draft'] and not x['prerelease'] and x['tag_name']!=m['tag'] and re.fullmatch(r'v[0-9.]+-[0-9]+\.local\.fc44',x['tag_name'])]
+    kept=[x for x in existing if not x['draft'] and not x['prerelease'] and x['tag_name']!=m['tag'] and re.fullmatch(rf"v[0-9.]+-[0-9]+\.local\.fc{CONFIG['fedora_release']}",x['tag_name'])]
     kept=sorted(kept,key=lambda x:x['published_at'],reverse=True)[:2]
     for rel in kept:
         tag=rel['tag_name'];target=package_root/tag;target.mkdir(exist_ok=True)
@@ -77,7 +77,7 @@ def assemble(dist,site,key_id,archive,offline=False):
         if previous['tag']!=tag:raise ValueError('Previous release manifest tag mismatch')
     target=package_root/m['tag'];target.mkdir(exist_ok=True)
     shutil.copy2(dist/m['rpm'],target/m['rpm'])
-    metadata=site/'rpm/fedora/44/x86_64';metadata.mkdir(parents=True,exist_ok=True)
+    metadata=site/f"rpm/fedora/{CONFIG['fedora_release']}/{CONFIG['architecture']}";metadata.mkdir(parents=True,exist_ok=True)
     run(['createrepo_c','--no-database','--checksum','sha256',
          '--baseurl',f'https://github.com/{repo}/releases/download/',package_root])
     shutil.copytree(package_root/'repodata',metadata/'repodata',dirs_exist_ok=True)
@@ -102,7 +102,7 @@ includepkgs=cn.com.sangfor.atrust
 ''')
     (site/'index.html').write_text(f'''<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <title>aTrust Fedora repository</title><h1>aTrust Fedora 更新仓库</h1>
-<p>个人非官方 Fedora 44 x86_64 适配。新上游通过构建检查后发布。</p>
+<p>个人非官方 Fedora {CONFIG['fedora_release']} x86_64 适配。新上游通过构建检查后发布。</p>
 <p><a href="https://github.com/{repo}">源码与使用说明</a> ·
 <a href="atrust-fedora.repo">DNF 配置</a> · <a href="RPM-GPG-KEY-atrust-fedora">公钥</a></p>
 <p>当前版本：{m['version']}-{m['release']}</p></html>''')

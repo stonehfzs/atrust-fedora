@@ -1,7 +1,7 @@
 # aTrust Fedora native update repository
 
 这是个人维护的、非官方的深信服 aTrust Fedora 原生适配和签名 DNF 更新仓库。
-当前目标为 Fedora 44 x86_64。首个适配来源为官方 Ubuntu 客户端 2.5.16.50。
+当前目标为 Fedora 45 x86_64。首个适配来源为官方 Ubuntu 客户端 2.5.16.50。
 目前发布包使用本机已有的 `stonesun` 用户组；其他机器请审阅并调整 `config.json` 后自行构建。
 
 ## 接入 DNF
@@ -30,7 +30,7 @@ aTrust 桌面界面需要后台服务才能连接。首次安装后执行上面�
 普通命令可以下载、`sudo dnf` 却超时时，请检查系统权限下的代理配置。
 终端中的 `http_proxy`、`https_proxy` 属于当前进程的环境，提权工具可能会清理它们。
 DNF 在没有自己的代理配置、也没有代理环境变量时会尝试直连。
-在 Fedora 44 的 DNF5 中，建议用原生配置管理命令保存已有代理，例如：
+在 Fedora 45 的 DNF5 中，建议用原生配置管理命令保存已有代理，例如：
 
 ```bash
 sudo dnf config-manager setopt atrust-fedora.proxy=http://127.0.0.1:7890
@@ -47,6 +47,15 @@ sudo dnf config-manager unsetopt atrust-fedora.proxy
 
 配置行为见 [DNF5 配置说明](https://dnf5.readthedocs.io/en/latest/dnf5.conf.5.html#proxy)
 和 [config-manager 官方文档](https://dnf5.readthedocs.io/en/latest/dnf5_plugins/config-manager.8.html)。
+
+## Fedora 45 迁移
+
+Fedora 45 包从 `2.5.16.50-7.local.fc45` 开始。DNF 配置使用 `$releasever`，系统升级后会自动选择 45 的仓库路径。
+旧版 Fedora 44 RPM 保留在 GitHub Releases；当前更新索引仅面向 Fedora 45。
+
+旧版 Electron 内置字体解析器不支持 Fedora 45 的新 Fontconfig 配置语法。
+客户端与后台使用包内的兼容字体配置，继续读取系统和用户字体；外部浏览器启动时会清除该覆盖。
+Fedora 45 的 RPM 校验要求签名，因此构建阶段仅检查摘要，发布阶段签名、验签后才进行隔离安装测试。
 
 ## 自动更新如何运行
 
@@ -101,7 +110,7 @@ python3 scripts/build.py build --offline --work /path/to/cache \
 ```
 
 新版本本地 DEB 必须通过 `--sha256` 指明已核实的校验值。
-需要 Fedora 44 构建环境、Python、Node.js、curl、dpkg-deb、rpmbuild 及运行库。
+需要 Fedora 45 构建环境、Python、Node.js、curl、dpkg-deb、rpmbuild 及运行库。
 
 ## 备份和回退
 

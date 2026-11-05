@@ -17,7 +17,7 @@ function run(url, gateway, expected) {
     }},
     Log: {info(){},warn(){},error(){}},
     process: {env: {ATRUST_GATEWAY:gateway, LD_LIBRARY_PATH:'private', LD_PRELOAD:'private',
-      QT_QPA_PLATFORM_PLUGIN_PATH:'private', QT_PLUGIN_PATH:'private', DISPLAY:':0'}},
+      QT_QPA_PLATFORM_PLUGIN_PATH:'private', QT_PLUGIN_PATH:'private', FONTCONFIG_FILE:'private', DISPLAY:':0'}},
     require: name => name.includes('history_addr') ? {getLastHistoryAddr: () => ({addr:gateway})} :
       {urlAddLanguageConfig:u=>u, currentLanguage:()=>''},
     childProcess: {execFile(path,args,options,callback) {
@@ -30,7 +30,7 @@ function run(url, gateway, expected) {
   if (!expected) return assert.strictEqual(launches.length, 0);
   assert.strictEqual(launches.length, 1);
   assert.strictEqual(launches[0].path, '/usr/bin/xdg-open');
-  for (const k of ['LD_LIBRARY_PATH','LD_PRELOAD','QT_QPA_PLATFORM_PLUGIN_PATH','QT_PLUGIN_PATH'])
+  for (const k of ['LD_LIBRARY_PATH','LD_PRELOAD','QT_QPA_PLATFORM_PLUGIN_PATH','QT_PLUGIN_PATH','FONTCONFIG_FILE'])
     assert(!(k in launches[0].env), `Inherited ${k}`);
   assert.strictEqual(launches[0].env.DISPLAY, ':0');
   const u = new URL(launches[0].args[0]);

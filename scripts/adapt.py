@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib
 import subprocess
 
-PROFILE = "fedora44-linux-v1"
+PROFILE = "fedora45-linux-v2"
 HISTORY_GUARD = ('os.platform()===Common.SYS_LINUX&&'
     '(Common.getOsName()===Common.OS_KYLIN_V10||Common.getOsName().indexOf(Common.OS_UBUNTU_16)!=-1)')
 
@@ -60,7 +60,7 @@ def apply(root: Path):
     before = "shell.openExternal(o).then"
     after = ('if(os.platform()===Common.SYS_LINUX){'
         'const cleanEnv=Object.assign({},process.env);'
-        'for(const key of ["LD_LIBRARY_PATH","LD_PRELOAD","QT_QPA_PLATFORM_PLUGIN_PATH","QT_PLUGIN_PATH"]){delete cleanEnv[key]}'
+        'for(const key of ["LD_LIBRARY_PATH","LD_PRELOAD","QT_QPA_PLATFORM_PLUGIN_PATH","QT_PLUGIN_PATH","FONTCONFIG_FILE"]){delete cleanEnv[key]}'
         'childProcess.execFile("/usr/bin/xdg-open",[o],{env:cleanEnv},r=>{'
         'if(r){Log.error(LOG_TAG,"Clean browser launch failed",r)}'
         'else{Log.info(LOG_TAG,"Clean browser launch succeeded")}});return;}' + before)

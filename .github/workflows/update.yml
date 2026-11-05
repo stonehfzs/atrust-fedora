@@ -23,7 +23,7 @@ permissions:
 jobs:
   build-publish:
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: fedora:45
     timeout-minutes: 40
     permissions:
       contents: write
@@ -82,9 +82,6 @@ jobs:
       - name: Fetch, adapt and build
         if: steps.needed.outputs.build == 'true'
         run: python3 scripts/build.py build --offline
-      - name: Check RPM installation in the isolated runner
-        if: steps.needed.outputs.build == 'true'
-        run: dnf install -y ./dist/*.rpm
       - name: Import repository signing key
         if: steps.needed.outputs.publish == 'true'
         env:
@@ -105,6 +102,11 @@ jobs:
       - name: Verify the release signature
         if: steps.needed.outputs.publish == 'true'
         run: python3 scripts/publish.py verify
+      - name: Check signed RPM installation in the isolated runner
+        if: steps.needed.outputs.build == 'true'
+        run: |
+          rpm --import RPM-GPG-KEY-atrust-fedora
+          dnf install -y ./dist/*.rpm
       - name: Publish immutable release
         if: steps.needed.outputs.build == 'true'
         env:
