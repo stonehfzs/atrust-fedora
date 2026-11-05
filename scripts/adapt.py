@@ -60,7 +60,7 @@ def apply(root: Path):
     before = "shell.openExternal(o).then"
     after = ('if(os.platform()===Common.SYS_LINUX){'
         'const cleanEnv=Object.assign({},process.env);'
-        'for(const key of ["LD_LIBRARY_PATH","LD_PRELOAD","QT_QPA_PLATFORM_PLUGIN_PATH","QT_PLUGIN_PATH","FONTCONFIG_FILE"]){delete cleanEnv[key]}'
+        'for(const key of ["LD_LIBRARY_PATH","LD_PRELOAD","QT_QPA_PLATFORM_PLUGIN_PATH","QT_PLUGIN_PATH","FONTCONFIG_FILE","FONTCONFIG_SYSROOT"]){delete cleanEnv[key]}'
         'childProcess.execFile("/usr/bin/xdg-open",[o],{env:cleanEnv},r=>{'
         'if(r){Log.error(LOG_TAG,"Clean browser launch failed",r)}'
         'else{Log.info(LOG_TAG,"Clean browser launch succeeded")}});return;}' + before)

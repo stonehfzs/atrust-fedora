@@ -101,7 +101,7 @@ def spec(version, release, payload, assets, group):
     installs = '\n'.join(f'install -Dm{mode} {q(assets/src)} %{{buildroot}}{dest}'
         for src,dest,mode in [
             ('atrust','/usr/bin/atrust','755'),
-            ('fonts.conf','/usr/share/sangfor/aTrust/fedora-fonts.conf','644'),
+            ('fonts.conf','/usr/share/sangfor/aTrust/fontconfig-root/etc/fonts/fonts.conf','644'),
             ('atrust-fedora-daemon','/usr/libexec/atrust-fedora-daemon','755'),
             ('atrust-fedora-initialize','/usr/libexec/atrust-fedora-initialize','755'),
             ('atrust-fedora-backup','/usr/libexec/atrust-fedora-backup','755'),
@@ -135,6 +135,10 @@ This personal repository currently targets the {group} group on Fedora {CONFIG['
 mkdir -p %{{buildroot}}/usr/share/sangfor
 cp -a {q(payload/'usr/share/sangfor/aTrust')} %{{buildroot}}/usr/share/sangfor/
 {installs}
+mkdir -p %{{buildroot}}/usr/share/sangfor/aTrust/fontconfig-root/usr/share %{{buildroot}}/usr/share/sangfor/aTrust/fontconfig-root/usr/local/share
+ln -s /usr/share/fonts %{{buildroot}}/usr/share/sangfor/aTrust/fontconfig-root/usr/share/fonts
+ln -s /usr/local/share/fonts %{{buildroot}}/usr/share/sangfor/aTrust/fontconfig-root/usr/local/share/fonts
+ln -s /home %{{buildroot}}/usr/share/sangfor/aTrust/fontconfig-root/home
 install -Dm644 {q(payload/'usr/lib/systemd/system/aTrustShell.service')} %{{buildroot}}/usr/lib/systemd/system/aTrustShell.service
 install -Dm644 {q(payload/'usr/lib/systemd/user/aTrustShell.service')} %{{buildroot}}/usr/lib/systemd/user/aTrustShell.service
 install -Dm644 {q(payload/'usr/share/pixmaps/aTrust.png')} %{{buildroot}}/usr/share/pixmaps/aTrust.png
