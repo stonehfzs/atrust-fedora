@@ -42,7 +42,7 @@ jobs:
             bash coreutils systemd iptables-nft iproute procps-ng psmisc \
             libX11 libXcomposite libXdamage libXext libXfixes libXrandr libXScrnSaver libXtst \
             libxcb libdrm mesa-libgbm libxkbcommon alsa-lib atk at-spi2-atk gtk3 nss nspr \
-            glib2 pango cairo libcurl libproxy qt5-qtbase qt5-qtx11extras libnsl libsecret libstdc++
+            glib2 pango cairo libcurl libproxy qt5-qtbase qt5-qtx11extras libnsl libsecret libstdc++ dejavu-sans-fonts texlive-fandol
           groupadd -r stonesun
       - name: Pipeline tests
         run: python3 -m unittest discover -s tests -v
@@ -107,6 +107,7 @@ jobs:
         run: |
           rpm --import RPM-GPG-KEY-atrust-fedora
           dnf install -y ./dist/*.rpm
+          FONTCONFIG_SYSROOT=/usr/share/sangfor/aTrust/fontconfig-root FONTCONFIG_FILE=/etc/fonts/fonts.conf fc-list : family | grep -F FandolHei
       - name: Publish immutable release
         if: steps.needed.outputs.build == 'true'
         env:

@@ -93,7 +93,8 @@ REQUIRES = '''bash, coreutils, systemd, iptables-nft, iproute, procps-ng, psmisc
 libX11, libXcomposite, libXdamage, libXext, libXfixes, libXrandr
 libXScrnSaver, libXtst, libxcb, libdrm, mesa-libgbm, libxkbcommon
 alsa-lib, atk, at-spi2-atk, gtk3, nss, nspr, glib2, pango, cairo
-libcurl, libproxy, qt5-qtbase, qt5-qtx11extras, libnsl, libsecret, libstdc++'''
+libcurl, libproxy, qt5-qtbase, qt5-qtx11extras, libnsl, libsecret, libstdc++
+dejavu-sans-fonts, texlive-fandol'''
 
 
 def spec(version, release, payload, assets, group):

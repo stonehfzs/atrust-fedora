@@ -50,11 +50,11 @@ sudo dnf config-manager unsetopt atrust-fedora.proxy
 
 ## Fedora 45 迁移
 
-Fedora 45 包从 `2.5.16.50-7.local.fc45` 开始。DNF 配置使用 `$releasever`，系统升级后会自动选择 45 的仓库路径。
+Fedora 45 包从 `2.5.16.50-8.local.fc45` 开始。DNF 配置使用 `$releasever`，系统升级后会自动选择 45 的仓库路径。
 旧版 Fedora 44 RPM 保留在 GitHub Releases；当前更新索引仅面向 Fedora 45。
 
 旧版 Electron 内置字体解析器不支持 Fedora 45 的新 Fontconfig 配置语法。
-客户端与后台使用包内的独立字体配置根目录（隔离系统配置模板），继续读取系统和用户字体；外部浏览器启动时会清除该覆盖。
+客户端与后台使用包内的独立字体配置根目录（隔离系统配置模板），使用包依赖提供的 DejaVu Sans 与 Fandol 静态字体，避免旧版渲染器显示 CJK 可变字体时出现方框；外部浏览器启动时会清除该覆盖。
 Fedora 45 的 RPM 校验要求签名，因此构建阶段仅检查摘要，发布阶段签名、验签后才进行隔离安装测试。
 
 ## 自动更新如何运行
